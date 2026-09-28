@@ -8,7 +8,6 @@ class Studentinfo extends StatefulWidget {
   @override
   State<Studentinfo> createState() => _StudentinfoState();
 }
-
 class Students {
   String? id;
   String name;
@@ -16,7 +15,7 @@ class Students {
   List<dynamic>? subject;
 
   Students({
-     this.id,
+    this.id,
     required this.name,
     required this.fathername,
     this.subject,
@@ -24,98 +23,121 @@ class Students {
 }
 
 class _StudentinfoState extends State<Studentinfo> {
-
-  // Updated component to support expanding inside a Row
-  Widget mycomponent(String label) {
-    return Expanded(
-      child: Container(
-        height: 40, // Increased height for better visibility
-        decoration: const BoxDecoration(color: Colors.black),
-        alignment: Alignment.center, // Centers the text inside the container
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 20),
-        ),
-      ),
-    );
-  }
-  var uuid = Uuid();
+  var varUuid= const Uuid();
   late List<Students> students = [
-    Students(id: uuid.v1() , name: "name1", fathername: "fathername"),
-    Students(id: uuid.v4(), name: "name1", fathername: "fathername"),
-    Students(id: uuid.v4(), name: "name1", fathername: "fathername"),
-    Students(id: uuid.v4(), name: "name1", fathername: "fathername"),
-
+    Students(id: varUuid.v4(), name: "Yasir", fathername: "Idrees"),
+    Students(id: varUuid.v4(), name: "Ali", fathername: "Usman"),
+    Students(id: varUuid.v4(), name: "Bilal", fathername: "Tariq"),
   ];
-
+  Future<void> _navigateAndSaveStudent([Students? existingStudent,int? index])async {
+       final result = await Navigator.of(context).push(MaterialPageRoute(builder: (context)=>Addstudent(studentToEdit:existingStudent )));
+       if(result!=null || result is Students){
+         setState(() {
+           if(index!=null){
+             students[index]=result;
+           }else{
+             result.id=varUuid.v4();
+             students.add(result);
+           }
+         });
+       }
+  }
+  void _deletestudent(int index){
+    showDialog(
+        context: context,
+        builder: (context)=>AlertDialog(
+          title: const Text("Delete Student"),
+          content: Text("Are you sure you want to delete this record?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                setState(() {
+                  students.removeAt(index);
+                });
+                Navigator.pop(context);
+              },
+              child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ));
+  }
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Student"),
+        title: const Text("Student Records (CRUD)"),
         backgroundColor: Colors.blue,
       ),
-
-      body: SingleChildScrollView(
-        child:    Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-
-          children: [
-            ListView.builder(
+      body: students.isEmpty? const Center(child: Text("No student is showing,tap + to add"),):
+          ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: students.length,
               shrinkWrap: true,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    height: 80,
-                    decoration: BoxDecoration(
-                        color: Colors.grey,
-                        borderRadius: BorderRadius.circular(12)
-
+              itemBuilder: (context,index){
+                final student=students[index];
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    // 1. ID on the far left inside a CircleAvatar
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      child: Text(
+                        "${index + 1}",
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    child: Column(
+
+                    // 2. Name
+                    title: Text(
+                      student.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+
+                    // 3. Father Name (Subtitle with top padding for spacing)
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text("Father: ${student.fathername}"),
+                    ),
+
+                    // 4. Edit & Delete Buttons on the far right using a Row
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min, // Prevents row from taking full width
                       children: [
-                        Text("ID: ${index + 1}",
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)),
-                        Text(students[index].name),
-                        Text(students[index].fathername)
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            _navigateAndSaveStudent(student, index);
+                          },
+                        ),
+                        // Space between Edit and Delete buttons
+                        
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _deletestudent(index);
+                          },
+                        ),
                       ],
                     ),
-
                   ),
+
                 );
-              }
-          )
-
-          ],
-
-        ),
-
-      ),
+              }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async{
-              final newStudent= await Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Addstudent()));
-
-              if(newStudent!=null && newStudent is Students){
-                  setState(()  {
-                  students.add( newStudent);
-
-                });
-              }
+        onPressed: () {
+          _navigateAndSaveStudent(); // Open in CREATE mode
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
-      
-
-
-
-
-
-
-
     );
-
   }
 }
